@@ -61,6 +61,13 @@ namespace winrt::ReactNativeWebView::implementation {
                     self->OnNavigationFailed(sender, args);
                 }
             });
+        
+        m_permissionReguestRevoker = m_webView.PermissionRequested(
+            winrt::auto_revoke, [ref = get_weak()](auto const& sender, auto const& args) {
+                if (auto self = ref.get()) {
+                    self->OnPremissionRequested(sender, args);
+                }
+        });
     }
 
     void ReactWebView::WriteWebViewNavigationEventArg(winrt::WebView const& sender, winrt::IJSValueWriter const& eventDataWriter) {
@@ -130,6 +137,16 @@ namespace winrt::ReactNativeWebView::implementation {
                 }
                 eventDataWriter.WriteObjectEnd();
             });
+    }
+
+    void ReactWebView::OnPremissionRequested(winrt::WebView const& webView, winrt::WebViewPermissionRequestedEventArgs const& args)
+    {
+      if (args.PermissionRequest().PermissionType() == WebViewPermissionType::ImmersiveView) {
+        // WebGL permission request
+        // https://docs.microsoft.com/en-us/microsoft-edge/webvr/webvr-in-webview
+        args.PermissionRequest().Allow();
+      }
+      args.PermissionRequest().Deny();
     }
 
     void ReactWebView::PostMessage(winrt::hstring const& message) {
